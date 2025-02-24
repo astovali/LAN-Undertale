@@ -1,0 +1,8 @@
+Makefile
+main.o
+physics.o
+undertale.exe
+sfml-graphics-2.dll
+sfml-system-2.dll
+sfml-window-2.dll
+.vscode
