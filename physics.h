@@ -1,4 +1,5 @@
 #include <vector>
+#include <SFML/Graphics.hpp>
 
 struct Point
 {
@@ -11,6 +12,12 @@ struct Vector
 {
     float x;
     float y;
+};
+
+struct Region
+{
+    Point start;
+    Point end;
 };
 
 
@@ -30,13 +37,27 @@ struct Projectile
     Vector velocity;
     std::vector<CollisionBox> hitboxes;
     int renderType = -1;
+    sf::Color color = sf::Color::White;
     void tick();
+};
+
+struct QuadtreeNode
+{
+    Region region;
+    std::vector<Projectile*> projectiles;
+};
+struct Collision
+{
+    Projectile* first;
+    Projectile* second;    
 };
 
 
 struct Game
 {
-    int width;
-    int height;
+    Region region;
     std::vector<Projectile> projectiles;
 };
+
+
+std::vector<Collision> getCollisions(QuadtreeNode node, int depth = 0);
