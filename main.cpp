@@ -1,39 +1,14 @@
 #include "physics.h"
+#include "player.h"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
 
 int main()
 {
-    CollisionBox aBox{{{0,0},{5,5},{5,0}}};
     Game game{{{0, 0}, {800, 800}}, {}};
-    for(float i=0; i<800; i+=6)
-    {
-        Projectile aProj{{i,0}, {0,i*0.003f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{0,i}, {i*0.003f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{i,800}, {0,i*-0.003f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{800,i}, {i*-0.003f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{i,30}, {0,i*0.002f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{30,i}, {i*0.002f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{i,770}, {0,i*-0.002f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{770,i}, {i*-0.002f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{i,60}, {0,i*0.001f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{60,i}, {i*0.001f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{i,740}, {0,i*-0.001f},{aBox}};
-        game.projectiles.push_back(aProj);
-        aProj = Projectile{{740,i}, {i*-0.001f,0},{aBox}};
-        game.projectiles.push_back(aProj);
-    }
+    Player player{{0,0},{{{0,0},{30,0},{30,30},{0,30}}}};
+    
     sf::RenderWindow window(sf::VideoMode({800, 800}), "Undertale");
     while (window.isOpen())
     {
@@ -44,6 +19,17 @@ int main()
                 window.close();
         }
         window.clear(sf::Color::Black);
+
+        player.tick();
+        std::vector<sf::Vertex> vertices;
+        vertices.push_back({{player.hurtbox.center.x+player.pos.x, player.hurtbox.center.y+player.pos.y}, sf::Color::Green});
+        for(int j=0; j<player.hurtbox.points.size(); j++)
+        {
+            vertices.push_back({{player.hurtbox.points[j].x+player.pos.x, player.hurtbox.points[j].y+player.pos.y}, sf::Color::Blue});
+        }
+        vertices.push_back({{player.hurtbox.points[0].x+player.pos.x, player.hurtbox.points[0].y+player.pos.y}, sf::Color::Blue});
+
+        window.draw(&vertices[0], vertices.size(), sf::TriangleFan);
 
         QuadtreeNode node{game.region, {}};
         node.projectiles.reserve((int)game.projectiles.size());
