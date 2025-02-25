@@ -29,5 +29,11 @@ void Player::tick()
     }
     pos.x += movement.x;
     pos.y += movement.y;
-    if(pos.x < border.start.x) pos.x 
+    for(Point& p: hurtbox.points)
+    {
+        if(p.x+pos.x < border.start.x) pos.x = border.start.x-p.x;
+        if(p.x+pos.x > border.end.x) pos.x = border.end.x-p.x;
+        if(p.y+pos.y < border.start.y) pos.y = border.start.y-p.y;
+        if(p.y+pos.y > border.end.y) pos.y = border.end.y-p.y;
+    }
 }

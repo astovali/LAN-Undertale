@@ -2,7 +2,19 @@
 #include <iostream>
 #include <cmath>
 
-bool CollisionBox::isColliding(CollisionBox other, Point pos, Point otherPos, bool inverseChecked)
+Point Point::offsetBy(Point offset)
+{
+    return Point{x+offset.x, y+offset.y};
+}
+
+Point Point::rotatedBy(float angle)
+{
+    float rad = angle * 180.f/M_PI;
+    return Point{x*(float)cos(rad) - y*(float)sin(rad), y*(float)cos(rad) + x*(float)sin(rad)};
+}
+
+bool CollisionBox::isColliding(CollisionBox other, Point pos, float angle, 
+                            Point otherPos, float otherAngle, bool inverseChecked)
 {
     /*
     float distanceSquared = (pos.x+center.x - (otherPos.x+other.center.x)) * (pos.x+center.x - (otherPos.x+other.center.x))
@@ -11,31 +23,37 @@ bool CollisionBox::isColliding(CollisionBox other, Point pos, Point otherPos, bo
     if(distanceSquared > radiiSquared) return false;
     */
 
-    std::vector<Vector> dividingAxes = {{points[0].x-points[points.size()-1].x, points[0].y-points[points.size()-1].y}};
+    Point p = points[0].rotatedBy(angle);
+    std::vector<Vector> dividingAxes = {{p.x-points[points.size()-1].x, p.y-points[points.size()-1].y}};
     for(int i=0; i<points.size()-1; i++)
     {
-        dividingAxes.push_back({points[i+1].x-points[i].x, points[i+1].y-points[i].y});
+        Point a = points[i+1].rotatedBy(angle);
+        Point b = points[i].rotatedBy(angle);
+        dividingAxes.push_back({a.x-b.x, a.y-b.y});
     }
 
     for(int i=0; i<dividingAxes.size(); i++)
     {
         bool isIntersection = false;
         Vector perpendicular{-dividingAxes[i].y, dividingAxes[i].x};
-        float projection = perpendicular.x*(points[0].x+pos.x) 
-                        + perpendicular.y*(points[0].y+pos.y);
+        Point currPoint = points[0].rotatedBy(angle).offsetBy(pos);
+        float projection = perpendicular.x*(currPoint.x) 
+                        + perpendicular.y*(currPoint.y);
         float minSelf = projection;
         float maxSelf = projection;
         for(int j=1; j<points.size(); j++)
         {
-            float projection = perpendicular.x*(points[j].x+pos.x) 
-                            + perpendicular.y*(points[j].y+pos.y);
+            currPoint = points[j].rotatedBy(angle).offsetBy(pos);
+            float projection = perpendicular.x*(currPoint.x) 
+                            + perpendicular.y*(currPoint.y);
             if(projection < minSelf) minSelf = projection;
             if(projection > maxSelf) maxSelf = projection;
         }
         for(int j=0; j<other.points.size(); j++)
         {
-            float projection = perpendicular.x*(other.points[j].x+otherPos.x) 
-                            + perpendicular.y*(other.points[j].y+otherPos.y);
+            currPoint = other.points[j].rotatedBy(otherAngle).offsetBy(otherPos);
+            float projection = perpendicular.x*(currPoint.x) 
+                            + perpendicular.y*(currPoint.y);
             if(projection >= minSelf && projection <= maxSelf)
             {
                 isIntersection = true;
@@ -45,11 +63,11 @@ bool CollisionBox::isColliding(CollisionBox other, Point pos, Point otherPos, bo
         if(!isIntersection)
         {
             if(inverseChecked) return false;
-            return other.isColliding(*this, otherPos, pos, true);
+            return other.isColliding(*this, otherPos, otherAngle, pos, angle, true);
         };
     }
     if(inverseChecked) return true;
-    return other.isColliding(*this, otherPos, pos, true);
+    return other.isColliding(*this, otherPos, otherAngle, pos, angle, true);
 }
 
 CollisionBox::CollisionBox(std::vector<Point> _points)
@@ -78,6 +96,7 @@ void Projectile::tick()
 {
     pos.x += velocity.x;
     pos.y += velocity.y;
+    angle += rotation;
 }
 
 int quadtreeDivValue = 3;
@@ -98,7 +117,8 @@ std::vector<Collision> getCollisions(QuadtreeNode node, int depth)
                     for(int b=0; b<node.projectiles[j]->hitboxes.size(); b++)
                     {
                         if(node.projectiles[i]->hitboxes[a].isColliding(node.projectiles[j]->hitboxes[b],
-                            node.projectiles[i]->pos, node.projectiles[j]->pos))
+                            node.projectiles[i]->pos, node.projectiles[i]->angle, 
+                            node.projectiles[j]->pos, node.projectiles[j]->angle))
                         {
                             isCollision = true;
                             break;
@@ -137,7 +157,7 @@ std::vector<Collision> getCollisions(QuadtreeNode node, int depth)
         {
             for(Point& point: hitbox.points)
             {
-                Point p{point.x+proj->pos.x, point.y+proj->pos.y};
+                Point p = point.rotatedBy(proj->angle).offsetBy(proj->pos);
                 if(p.x >= q1.region.start.x && p.y >= q1.region.start.y
                     && p.x <= q1.region.end.x && p.y <= q1.region.end.y) inQ1 = true;
                 if(p.x >= q2.region.start.x && p.y >= q2.region.start.y

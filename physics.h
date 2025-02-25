@@ -6,6 +6,8 @@ struct Point
 {
     float x;
     float y;
+    Point offsetBy(Point offset);
+    Point rotatedBy(float angle);
 };
 
 
@@ -28,7 +30,7 @@ struct CollisionBox
     Point center;
     float radius;
     CollisionBox(std::vector<Point> _points);
-    bool isColliding(CollisionBox other, Point pos, Point otherPos, bool inverseChecked=false);
+    bool isColliding(CollisionBox other, Point pos, float angle, Point otherPos, float otherAngle, bool inverseChecked=false);
 };
 
 
@@ -37,6 +39,8 @@ struct Projectile
     Point pos;
     Vector velocity;
     std::vector<CollisionBox> hitboxes;
+    float angle = 0.f;
+    float rotation = 0.f;
     int renderType = -1;
     sf::Color color = sf::Color::White;
     void tick();

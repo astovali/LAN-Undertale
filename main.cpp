@@ -1,5 +1,6 @@
 #include "physics.h"
 #include "player.h"
+#include "opponent.h"
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
@@ -7,7 +8,8 @@
 int main()
 {
     Game game{{{0, 0}, {800, 800}}, {}};
-    Player player{{0,0},{{{0,0},{30,0},{30,30},{0,30}}}};
+    Player player{{0,0},{{{0,0},{30,0},{30,30},{0,30}}},{{100,100},{700,700}}};
+    Opponent opponent{&game, &player};
     
     sf::RenderWindow window(sf::VideoMode({800, 800}), "Undertale");
     while (window.isOpen())
@@ -20,6 +22,7 @@ int main()
         }
         window.clear(sf::Color::Black);
 
+        opponent.tick();
         player.tick();
         std::vector<sf::Vertex> vertices;
         vertices.push_back({{player.hurtbox.center.x+player.pos.x, player.hurtbox.center.y+player.pos.y}, sf::Color::Green});
@@ -31,23 +34,14 @@ int main()
 
         window.draw(&vertices[0], vertices.size(), sf::TriangleFan);
 
-        QuadtreeNode node{game.region, {}};
-        node.projectiles.reserve((int)game.projectiles.size());
-        for(Projectile& proj: game.projectiles) node.projectiles.push_back(&proj);
-        std::vector<Collision> collisions = getCollisions(node);
-        /*
-        window.close();
-        break;
-        */
-        for(int i=0; i<game.projectiles.size(); i++)
-        {
-            game.projectiles[i].color = sf::Color::White;
-        }
-        for(int i=0; i<collisions.size(); i++)
-        {
-            collisions[i].first->color = sf::Color::Red;
-            collisions[i].second->color = sf::Color::Red;
-        }
+        vertices = {sf::Vertex{{player.border.start.x, player.border.start.y}},
+                    sf::Vertex{{player.border.start.x, player.border.end.y}},
+                    sf::Vertex{{player.border.end.x, player.border.end.y}},
+                    sf::Vertex{{player.border.end.x, player.border.start.y}},
+                    sf::Vertex{{player.border.start.x, player.border.start.y}}};
+        
+        window.draw(&vertices[0], vertices.size(), sf::LineStrip);
+
         for(int i=0; i<game.projectiles.size(); i++)
         {
             Projectile& proj = game.projectiles[i];
@@ -61,17 +55,27 @@ int main()
                 i--;
                 continue;
             }
+            for(CollisionBox& box: proj.hitboxes)
+            {
+                if(player.hurtbox.isColliding(box, player.pos, 0.f, proj.pos, proj.angle))
+                {
+                    window.close();
+                }
+            }
             if(proj.renderType == -1)
             {
                 for(CollisionBox& box: proj.hitboxes)
                 {
                     std::vector<sf::Vertex> vertices;
-                    vertices.push_back({{box.center.x+proj.pos.x, box.center.y+proj.pos.y}, proj.color});
+                    Point p = box.center.rotatedBy(proj.angle).offsetBy(proj.pos);
+                    vertices.push_back({{p.x, p.y}, proj.color});
                     for(int j=0; j<box.points.size(); j++)
                     {
-                        vertices.push_back({{box.points[j].x+proj.pos.x, box.points[j].y+proj.pos.y}, proj.color});
+                        p = box.points[j].rotatedBy(proj.angle).offsetBy(proj.pos);
+                        vertices.push_back({{p.x, p.y}, proj.color});
                     }
-                    vertices.push_back({{box.points[0].x+proj.pos.x, box.points[0].y+proj.pos.y}, proj.color});
+                    p = box.points[0].rotatedBy(proj.angle).offsetBy(proj.pos);
+                    vertices.push_back({{p.x, p.y}, proj.color});
 
                     window.draw(&vertices[0], vertices.size(), sf::TriangleFan);
                 }

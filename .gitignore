@@ -1,6 +1,8 @@
 Makefile
 main.o
 physics.o
+player.o
+opponent.o
 undertale.exe
 sfml-graphics-2.dll
 sfml-system-2.dll
