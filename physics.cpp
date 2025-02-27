@@ -9,7 +9,7 @@ Point Point::offsetBy(Point offset)
 
 Point Point::rotatedBy(float angle)
 {
-    float rad = angle * 180.f/M_PI;
+    float rad = angle * M_PI/180.f;
     return Point{x*(float)cos(rad) - y*(float)sin(rad), y*(float)cos(rad) + x*(float)sin(rad)};
 }
 
@@ -94,9 +94,12 @@ CollisionBox::CollisionBox(std::vector<Point> _points)
 
 void Projectile::tick()
 {
+    velocity.x += acceleration.x;
+    velocity.y += acceleration.y;
     pos.x += velocity.x;
     pos.y += velocity.y;
     angle += rotation;
+    age += 1;
 }
 
 int quadtreeDivValue = 3;

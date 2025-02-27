@@ -12,6 +12,7 @@ int main()
     Opponent opponent{&game, &player};
     
     sf::RenderWindow window(sf::VideoMode({800, 800}), "Undertale");
+    window.setFramerateLimit(60);
     while (window.isOpen())
     {
         sf::Event event;
@@ -46,21 +47,19 @@ int main()
         {
             Projectile& proj = game.projectiles[i];
             proj.tick();
-            if(proj.pos.x < game.region.start.x-50
-                || proj.pos.y < game.region.start.y-50
-                || proj.pos.x > game.region.end.x+50
-                || proj.pos.y > game.region.end.y+50)
+            for(CollisionBox& box: proj.hitboxes)
+            {
+                if(proj.color == sf::Color::White || (proj.color == sf::Color::Blue && player.moved))
+                    if(player.hurtbox.isColliding(box, player.pos, 0.f, proj.pos, proj.angle))
+                    {
+                        window.close();
+                    }
+            }
+            if(proj.lifetime < proj.age && proj.lifetime != -1)
             {
                 game.projectiles.erase(game.projectiles.begin() + i);
                 i--;
                 continue;
-            }
-            for(CollisionBox& box: proj.hitboxes)
-            {
-                if(player.hurtbox.isColliding(box, player.pos, 0.f, proj.pos, proj.angle))
-                {
-                    window.close();
-                }
             }
             if(proj.renderType == -1)
             {

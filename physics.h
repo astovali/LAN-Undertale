@@ -15,6 +15,10 @@ struct Vector
 {
     float x;
     float y;
+    Vector operator*(const float& scale)
+    {
+        return Vector{x*scale, y*scale};
+    };
 };
 
 struct Region
@@ -38,11 +42,14 @@ struct Projectile
 {
     Point pos;
     Vector velocity;
+    Vector acceleration;
     std::vector<CollisionBox> hitboxes;
     float angle = 0.f;
     float rotation = 0.f;
     int renderType = -1;
     sf::Color color = sf::Color::White;
+    int lifetime = -1;
+    int age = 0;
     void tick();
 };
 
